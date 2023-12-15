@@ -206,7 +206,7 @@ class INIClass(Iterable):
         """
         for i in self.__raw.values():
             fp.write(f"{repr(i)}\n")
-            for key, value in i.items(useraw=True):
+            for key, value in i.items():
                 fp.write(f"{key}{pairing}{value}\n")
             fp.write("\n" * blankline)
 
