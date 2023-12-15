@@ -21,10 +21,22 @@ __all__ = ['INIClass', 'INISection', 'scanIncludes']
 
 
 class INISection(MutableMapping):
+    @staticmethod
+    def __bool_conv(val: str):
+        return val[0].lower() in ('1', 'y', 't')
+
+    @staticmethod
+    def __list_conv(val: str):
+        return val.split(',')
+
     __VAL_CONV = {
         True: "yes",
         False: "no",
         None: ""
+    }
+    __CONVERTER = {
+        bool: __bool_conv,
+        list: __list_conv
     }
 
     def __init__(self, section: str, _super=None, **kwargs):
@@ -87,10 +99,8 @@ class INISection(MutableMapping):
             value: str = target[key]
             if not value:  # null value
                 return None
-            elif converter is bool:
-                return value[0].lower() in ('1', 'y', 't')
             else:
-                return converter(value)
+                return self.__CONVERTER.get(converter, converter)(value)
         else:
             return default
 
