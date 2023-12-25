@@ -127,7 +127,7 @@ class INISection(MutableMapping):
             raise TypeError(type(section))
         self._name = section._name
         self.parent = section.parent
-        self.__pairs = dict(section.items(useraw=True))
+        self.__pairs = dict(section.items())
 
 
 class INIClass(Iterable):

@@ -5,7 +5,7 @@
 
 from os.path import exists, join
 
-from .ini import INIClass, INISection
+from .ini import INIClass
 
 
 def _ex_regs(map_: INIClass, registry, target: INIClass):
@@ -23,14 +23,13 @@ def _ex_entries(map_: INIClass, target: INIClass, *entries):
         del map_[i]
 
 
-def _ex_compressed(map_: INIClass, section_name, file):
-    with open(file, 'wb') as fp:
-        for i in map_.getTypeList(section_name):
-            fp.write(f'{i};;')
-    try:
-        del map[section_name]
-    except Exception:
-        pass
+def _ex_compressed(map_: INIClass, section_name: str, target: str):
+    tini = INIClass()
+    if section_name in map_:
+        tini[section_name] = map_[section_name]
+        del map_[section_name]
+    with open(target, 'w', encoding='utf-8') as f:
+        tini.writeStream(f)
 
 
 def exportMapElems(self: INIClass, out_dir: str):
@@ -73,21 +72,12 @@ def exportMapElems(self: INIClass, out_dir: str):
         self.writeStream(fp)
 
 
-def _extend_bin(bin_path, extend_name):
-    s = ""
-    with open(bin_path, 'rb') as fp:
-        while fp.readable():
-            s += fp.read()
-    s = s.split(';;')[:-1]  # like 'aa;;bb;;' => ['aa', 'bb', '']
-    return INISection(extend_name, **zip(range(1, len(s)), s))
-
-
 def compilePartialMap(src_dir, out_name):
     """To merge partial files into a map file.
 
     PS: src_dir shouldn't end with `\\` or `/`!
 
-    e.g. `compilePartialMap('D:/yra07')` => `D:/yra07/yra07.map`
+    e.g. `compilePartialMap('D:/yra07', 'antrc')` => `D:/yra07/antrc.map`
     """
     if not exists(src_dir):
         return
@@ -96,14 +86,13 @@ def compilePartialMap(src_dir, out_name):
     out = INIClass()
     out.read(join(src_dir, "partial.ini"),
              join(src_dir, 'Houses.ini'),
+             join(src_dir, 'iso.bin'),
+             join(src_dir, 'ovl.bin'),
+             join(src_dir, 'ovldata.bin'),
              join(src_dir, 'AI.ini'),
              join(src_dir, 'Logics.ini'),
              join(src_dir, 'Technos.ini'),
              encoding='utf-8')
-    out['IsoMapPack5'] = _extend_bin(join(src_dir, 'iso.bin'), 'IsoMapPack5')
-    out['OverlayPack'] = _extend_bin(join(src_dir, 'ovl.bin'), 'OverlayPack')
-    out['OverlayDataPack'] = _extend_bin(join(src_dir, 'ovldata.bin'),
-                                         'OverlayDataPack')
     with open(join(src_dir, f"{out_name}.map"), 'w',
               encoding='utf-8') as fp:
         out.writeStream(fp)
