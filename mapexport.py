@@ -12,7 +12,7 @@ def _ex_regs(map_: INIClass, registry, target: INIClass):
     reg = map_.getTypeList(registry)
     del map_[registry]
     target[registry] = dict(zip(range(len(reg)), reg))
-    _ex_entries(map, target, *reg)
+    _ex_entries(map_, target, *reg)
 
 
 def _ex_entries(map_: INIClass, target: INIClass, *entries):

@@ -166,7 +166,7 @@ class INIClass(Iterable):
             return tuple()
 
         ret = []
-        for i in self.__raw[section].values(useraw=True):
+        for i in self.__raw[section].values():
             if i not in ret:
                 ret.append(i)
         return ret
