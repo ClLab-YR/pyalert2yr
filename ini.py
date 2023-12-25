@@ -89,7 +89,7 @@ class INISection(MutableMapping):
             sect = sect.parent
         return sect
 
-    def get(self, key, converter: Callable[[str], object], default=None):
+    def get(self, key, converter: Callable[[str], object] = str, default=None):
         """
         Returns converted value if key is reachable (i.e.
         could be found in current context), otherwise `default`.

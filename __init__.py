@@ -3,8 +3,7 @@
 # @Time   : 2023/11/14 20:01:52
 # @Author : Chloride
 
-import _ares_ini as ini
-import _export as mapexport
+from . import ini, mapexport
 
 __all__ = ('ini', 'mapexport',
            )

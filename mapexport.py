@@ -5,7 +5,7 @@
 
 from os.path import exists, join
 
-from _ares_ini import INIClass, INISection
+from .ini import INIClass, INISection
 
 
 def _ex_regs(map_: INIClass, registry, target: INIClass):
