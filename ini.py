@@ -167,7 +167,7 @@ class INIClass(Iterable):
 
         ret = []
         for i in self.__raw[section].values():
-            if i not in ret:
+            if i not in ret and i != '':
                 ret.append(i)
         return ret
 
