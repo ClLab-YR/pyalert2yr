@@ -10,6 +10,8 @@ from .ini import INIClass
 
 def _ex_regs(map_: INIClass, registry, target: INIClass):
     reg = map_.getTypeList(registry)
+    if not reg:
+        return
     del map_[registry]
     target[registry] = dict(zip(range(len(reg)), reg))
     _ex_entries(map_, target, *reg)
