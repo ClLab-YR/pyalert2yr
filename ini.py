@@ -49,7 +49,7 @@ class INISection(MutableMapping):
     def __setitem__(self, k, v):
         if isinstance(v, (list, tuple, set)):
             v = ','.join(map(str, v))
-        self.__pairs[k] = self.__VAL_CONV.get(v, str(v))
+        self.__pairs[str(k)] = self.__VAL_CONV.get(v, str(v))
 
     def __delitem__(self, k):
         del self.__pairs[k]
@@ -141,6 +141,7 @@ class INIClass(Iterable):
         return self.__raw[key]
 
     def __setitem__(self, key, value):
+        key = str(key)
         if key not in self.__raw:
             self.__raw[key] = INISection(key)
 

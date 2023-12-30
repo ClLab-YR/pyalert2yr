@@ -5,8 +5,8 @@
 模块本身不作为工具对外提供，但仍向包提供了**基于 Ares 的无注释** INI 实现。  
 ~~也算是 PyMapRA2 的遗产。可惜旧文档已经找不到了，我也懒得重新写一份。~~
 
-```shell
->>> import _ares_ini as ini
+```python
+>>> import pyalert2yr.ini as ini
 >>> ini.__all__
 ['INIClass', 'INISection', 'scanIncludes']
 >>>
@@ -33,7 +33,7 @@ Windows 的路径用`\`分隔，传参时不妨`r"D:\YR\RULESMD.INI"`。
 ## INI 小节
 
 与`dict[str, str]`类似，但实现了类型转换。  
-对小节的键值**写**操作时，会自动将值转为`str`类型；读操作如需强转则需要调用`get()`。
+对小节的键值**写**操作时，会自动将键值转为`str`类型；读操作如需强转则需要调用`get()`。
 
 ```python
 class INISection(MutableMapping):
