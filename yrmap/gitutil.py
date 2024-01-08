@@ -4,6 +4,7 @@
 # @Author : Chloride
 
 from os.path import exists, join
+from struct import pack, unpack
 
 from ..ini import INIClass
 
@@ -25,12 +26,22 @@ def _ex_entries(map_: INIClass, target: INIClass, *entries):
         del map_[i]
 
 
+def _ex_binaries(map_: INIClass, section, target_fn):
+    if section not in map_:
+        return
+    with open(target_fn, 'wb') as f:
+        for k, v in map_[section].items():
+            cur = pack('i70s', int(k), v.encode())
+            f.write(cur)
+    del map_[section]
+
+
 def splitMap(self: INIClass, out_dir: str):
     """To split map files to smaller files (git friendly).
 
     e.g. `exportMapElems(yr_a07, 'D:/yra07')` =>
     - `D:/yra07/(...).ini`
-    - `D:/yra07/*mappkg.bin`
+    - `D:/yra07/*.mappkg`
     - `D:/yra07/partial.ini`
     """
     t = INIClass()
@@ -76,18 +87,24 @@ def splitMap(self: INIClass, out_dir: str):
         t.writeStream(fp)
     t.clear()
 
-    _ex_entries(self, t, 'IsoMapPack5')
-    with open(join(out_dir, 'isomappkg.bin'), 'w', encoding='utf-8') as fp:
-        t.writeStream(fp)
-    t.clear()
-
-    _ex_entries(self, t, 'OverlayPack', 'OverlayDataPack')
-    with open(join(out_dir, 'ovlmappkg.bin'), 'w', encoding='utf-8') as fp:
-        t.writeStream(fp)
-    t.clear()
+    _ex_binaries(self, 'IsoMapPack5', join(out_dir, 'iso.mappkg'))
+    _ex_binaries(self, 'OverlayPack', join(out_dir, 'ovl.mappkg'))
+    _ex_binaries(self, 'OverlayDataPack', join(out_dir, 'ovldata.mappkg'))
 
     with open(join(out_dir, 'partial.ini'), 'w', encoding='utf-8') as fp:
         self.writeStream(fp)
+
+
+def _im_binaries(target_map: INIClass, package_fn, target_section):
+    target_map[target_section] = {}
+    with open(package_fn, 'rb') as fp:
+        while True:
+            curpair = fp.read(4 + 70)  # int 4b, value char* 70b.
+            if not curpair:
+                break
+            curpair = unpack('i70s', curpair)
+            target_map[target_section].update(
+                [(str(curpair[0]), curpair[1].decode().replace('\x00', ''))])
 
 
 def joinMap(src_dir, out_name):
@@ -111,9 +128,10 @@ def joinMap(src_dir, out_name):
              join(src_dir, 'logics.ini'),
              join(src_dir, 'technos.ini'),
              join(src_dir, 'natures.ini'),
-             join(src_dir, 'isomappkg.bin'),
-             join(src_dir, 'ovlmappkg.bin'),
              encoding='utf-8')
+    _im_binaries(out, join(src_dir, 'iso.mappkg'), 'IsoMapPack5')
+    _im_binaries(out, join(src_dir, 'ovl.mappkg'), 'OverlayPack')
+    _im_binaries(out, join(src_dir, 'ovldata.mappkg'), 'OverlayDataPack')
     with open(join(src_dir, f"{out_name}.map"), 'w',
               encoding='utf-8') as fp:
         out.writeStream(fp)
