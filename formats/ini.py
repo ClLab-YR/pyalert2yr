@@ -13,7 +13,7 @@ the standard lib `configparser` won't be suitable anymore.
 
 import warnings
 from chardet import detect
-from io import TextIOWrapper
+from io import StringIO, TextIOWrapper
 from os.path import join, split
 from typing import Callable, Iterable, MutableMapping
 
@@ -221,7 +221,7 @@ class INIClass(Iterable):
                 fp.write(f"{key}{pairing}{value}\n")
             fp.write("\n" * blankline)
 
-    def readStream(self, stream: TextIOWrapper):
+    def readStream(self, stream: StringIO):
         """
         Load a C&C ini.
         """
@@ -258,62 +258,60 @@ class INIClass(Iterable):
             encoding: def to auto (None).
 
         Hint:
-            - The auto encoding detect may not be effective.
-            It's recommended to just consider `gb18030` or `utf-8`.
+            The keyword param `encoding` is now just for compatibility,
+            since `chardet.detect()` is good enough, with fallbacks ensured.
+
+        Note:
+            You may consider `readTree` function instead of this method,
+            so that you could just complete reading in one line:
+
+            ```python
+            from ini import readTree
+            doc = readTree("/home/chloridep/rulesmd.ini", sequential=True)
+            ```
         """
         for i in inis:
-            if encoding is None:
-                with open(i, 'rb') as fs:
-                    encoding = detect(fs.read())['encoding']
             try:
-                with open(i, 'r', encoding=encoding) as fs:
-                    self.readStream(fs)
+                with open(i, 'rb') as fp:
+                    raw = fp.read()
             except OSError as e:
-                warnings.warn(
-                    f'INI tree incorrect - {e.strerror}: {e.filename}')
+                warnings.warn("INI tree incorrect - "
+                              f"{e.strerror}: {e.filename}")
+            try:
+                codec = detect(raw)
+                if codec is None or codec['confidence'] < 0.8:
+                    codec = {"encoding": "utf-8"}
+                raw = raw.decode(codec['encoding'])
+            except UnicodeDecodeError:
+                raw = raw.decode('gbk')
+            self.readStream(StringIO(raw))
 
 
-def scanINITree(root) -> list:
+def scanINITree(rootpath, *subpaths, sequential=False) -> INIClass:
+    """Try to read a sequence of inis, or DFS walk an INI include tree.
+
+    CAUTIONS:
+        - When `sequential` is `True`, the method would only read
+        `rootpath` and `subpaths`, ignoring `[#include]` in each INI.
+
+        - The `[#include]` DFS walk needs the assumption below ensured:
+            - ALL ini paths are based on a common parent directory,
+            like `D:/yr_Ares/` in the following paths:
+                - root `D:/yr_Ares/rulesmd.ini`,
+                - sub `D:/yr_Ares/rules_hotfix.ini`,
+                - sub `D:/yr_Ares/Includes/rules_GDI.ini`.
+            - INIs should ALL be readable, without encrypted or mix packed.
+
+    Notes:
+        Due to the implements of this older version INI APIs,
+        right here we still read files one by one.
     """
-    To fetch all available INIs in the `[#include]`, for `INIClass` reading.
-
-    Hint:
-        - We assume the inis are all based on the directory of root.
-        - Files that get `UserWarning` will be skipped,
-        which means the result may not be always correct.
-
-    Args:
-        root: the beginning ini file path of traversal. i.e. './rulesmd.ini'.
-
-    Returns:
-        A list of inis, with the beginning ini placed in [0].
-    """
-    # In fact, this is just pre-order traversal of the sub ini tree.
-    doc = INIClass()
-    ret, stack = [], [root]
-    rootdir = split(root)[0]
-
+    ret = INIClass()
+    rootdir, stack = split(rootpath)[0], [rootpath]
     while len(stack) > 0:
-        root = stack.pop()
-
-        try:
-            doc.read(root)
-        except OSError as e:
-            warnings.warn(f'{e.strerror}: {e.filename}')
-            continue
-        except UnicodeDecodeError as e:
-            warnings.warn(
-                f'Includes skipped: DecodeError({e.encoding}) - {root}')
-            ret.append(root)
-        else:
-            ret.append(root)
-
-        if '#include' in doc:
-            rootinc = [join(rootdir, i)
-                       for i in doc['#include'].values()]
-            rootinc.reverse()
-            stack.extend(rootinc)
-        doc.clear()
-
-    # ret.pop(0)  # remove the initial root.
+        ret.read(join(rootdir, stack.pop()))
+        if not sequential and '#include' in ret:
+            subpaths = ret['#include'].values()
+            del ret['#include']
+        stack.extend(reversed(subpaths))
     return ret

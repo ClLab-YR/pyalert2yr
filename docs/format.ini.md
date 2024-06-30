@@ -12,16 +12,23 @@
 >>>
 ```
 
-## 查找子 ini 树
+## 读取子 ini 树
 ```python
-def scanINITree(ini_root_path) -> list:
-    """搜索 [#includes] 子 INI，并【尽可能】按游戏读取的顺序排列。"""
+def scanINITree(root_path, *sub_paths, sequential=False) -> INIClass:
+    """序列读取，或【尽可能】按 Ares 那样深度优先读取 [#include]。"""
 ```
 
-> `ini_root_path` 根 INI 文件路径  
-Windows 的路径用`\`分隔，传参时不妨`r"D:\YR\RULESMD.INI"`。
+> 注：对于已经使用此 API 的代码，虽然依照原先的调用它仍会做 DFS 遍历，
+> 但你仍需要调整实现——现在它**不再返回待读 INI 序列**，而是直接返回合并的 INI 文档实例。
 
-> “尽可能”是指，我们无法处理违反下列假设的子 INI 条目（比如置于 MIX 或加密）。
+> - `root_path` 根 INI 文件路径  
+> > Windows 的路径用`\`分隔，传参时不妨`r"D:\YR\RULESMD.INI"`。
+> - `sub_paths` 子 INI 文件路径  
+> 当`sequential`为`True`时，忽略各 ini 的`[#include]`，读完根 INI 后依次再读子 INI。
+> - `sequential` 序列读取开关  
+> 若`sequential`为`False`，则**只会读取根 INI**，并且根据`[#include]`读取整棵 INI 嵌套树。
+
+> 上面提到的“尽可能”是指，我们无法处理违反下列假设的子 INI 条目（比如置于 MIX 或加密）。
 > - 所有子 INI 均与根 INI 处于同一目录，或是其子目录：
 > ```
 > [root] D:\YR\rulesmd.ini
@@ -74,6 +81,6 @@ class INIClass:
     def readStream(self, stream: TextIOWrapper):
         """读取单个打开的文件流。"""
     def read(self, *inis, encoding=None):
-        """批量读入 ini（可以通过 scanIncludes() 获取）。
-        编码由 chardet 库自动判别。"""
+        """批量读入 ini。编码参数仅用于兼容，现不再使用，
+        而是由 chardet 库自动判别（加了保底，基本不会翻车）。"""
 ```
