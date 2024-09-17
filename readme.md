@@ -1,4 +1,6 @@
-# 红红地图工具脚本库 - RA2 Map Script Lib
+# 听说傻逼 ChlorideP 又有了不切实际的重构幻想，我的评价是早点死心
+
+~~# 红红地图工具脚本库 - RA2 Map Script Lib~~
 
 > [!note]
 > 项目现在根据分支分成了两个版本：  
